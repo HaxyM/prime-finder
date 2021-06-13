@@ -17,6 +17,7 @@ template <class counterInt_type, class operatingInt_type> class resultManager
  static auto getRadicesBegin() noexcept;
  static auto getRadicesEnd() noexcept;
  private:
+ constexpr const static std :: size_t smallPrimes = 203'280'221ul;
  static std :: vector<operatingInt_type> found;
  static std :: vector<counterInt_type> foundLarge;
  static typename decltype(found) :: const_iterator radicesBegin;
@@ -32,7 +33,7 @@ template <class counterInt_type, class operatingInt_type> std :: size_t resultMa
 
 template <class counterInt_type, class operatingInt_type> inline void resultManager <counterInt_type, operatingInt_type> :: init(const std::size_t& maxSize, const std::vector<operatingInt_type>& countingBlock)
 {
- resultManager <counterInt_type, operatingInt_type> :: found.reserve(maxSize);
+ resultManager <counterInt_type, operatingInt_type> :: found.reserve(smallPrimes);
  resultManager <counterInt_type, operatingInt_type> :: radicesBegin = std :: next(resultManager <counterInt_type, operatingInt_type> :: found.cbegin(), steps :: getPrimesToSkip());
  resultManager <counterInt_type, operatingInt_type> :: radicesEnd = std :: next(resultManager <counterInt_type, operatingInt_type> :: radicesBegin, countingBlock.size());
  resultManager <counterInt_type, operatingInt_type> :: expectedSize = maxSize;
