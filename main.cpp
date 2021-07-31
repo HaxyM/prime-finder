@@ -10,6 +10,7 @@
 #include <iterator>
 #include <list>
 #include <map>
+#include <optional>
 #include <type_traits>
 #include <vector>
 
@@ -42,6 +43,7 @@ constexpr const static unsigned long int maxSize = 1'000'000'000ul;
 constexpr const static unsigned long int step = maxSize / 10'000ul;
 
 std :: ostream* output = &std :: cout;
+std :: optional<std :: ifstream> input = {};
 
 void parseArgs(int argc, char* argv[])
 {
@@ -73,6 +75,10 @@ void parseArgs(int argc, char* argv[])
     std :: cout << "File opened: " << std :: boolalpha << output->good() << std :: endl;
     ++i;
     break;
+    case param :: input:
+    input.emplace(*argv++);
+    std :: cout << "Input file opened: " << std :: boolalpha << input->good() << std :: endl;
+    break;
    };
   }
   else
@@ -88,6 +94,11 @@ int main(int argc, char* argv[])
  if (!(results :: init(maxSize)))
  {
   std :: cerr << "Failed to initialise." << std :: endl;
+  return EXIT_FAILURE;
+ }
+ if (input && (!results :: load(std :: istream_iterator<counterInt_type>(*input), std :: istream_iterator<counterInt_type>())))
+ {
+  std :: cerr << "Failed to load input data." << std :: endl;
   return EXIT_FAILURE;
  }
  //countingBlock.reserve(sqrtl(maxSize));

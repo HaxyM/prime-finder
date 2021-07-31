@@ -10,6 +10,7 @@ template <class counterInt_type, class operatingInt_type> class resultManager
 {
  public:
  ~resultManager() = delete;
+ template <class Iterator> static bool load(Iterator Begin, Iterator End) noexcept;
  static bool init(const std :: size_t& maxSize) noexcept;
  static void addFound(const counterInt_type& result);
  static operatingInt_type extendBlock() noexcept;
@@ -31,6 +32,58 @@ template <class counterInt_type, class operatingInt_type> std :: vector<counterI
 template <class counterInt_type, class operatingInt_type> typename decltype(resultManager <counterInt_type, operatingInt_type> :: found) :: const_iterator resultManager <counterInt_type, operatingInt_type> :: radicesBegin = std :: next(resultManager <counterInt_type, operatingInt_type> :: found.cbegin(), steps :: getPrimesToSkip());
 template <class counterInt_type, class operatingInt_type> typename decltype(resultManager <counterInt_type, operatingInt_type> :: found) :: const_iterator resultManager <counterInt_type, operatingInt_type> :: radicesEnd = resultManager <counterInt_type, operatingInt_type> :: radicesBegin;
 template <class counterInt_type, class operatingInt_type> std :: size_t resultManager <counterInt_type, operatingInt_type> :: expectedSize = {};
+
+template <class counterInt_type, class operatingInt_type> template <class Iterator> inline bool resultManager <counterInt_type, operatingInt_type> :: load(Iterator Begin, Iterator End) noexcept
+{
+ struct
+ {
+  std :: vector<operatingInt_type> small;
+  std :: vector<counterInt_type> large;
+  auto& operator * () {return *this;}
+  auto operator ++ () {return *this;}
+  auto& operator ++ (int) {return *this;}
+  auto& operator = (counterInt_type a)
+  {
+   if (a > std :: numeric_limits<typename decltype(small) :: value_type> :: max())
+   {
+    large.push_back(a);
+   }
+   else
+   {
+    found.push_back(static_cast<typename decltype(small) :: value_type>(a));
+   }
+   return *this;
+  };
+ } iterator;
+ try
+ {
+  std :: copy(Begin, End, iterator);
+  if (iterator.small.size() > resultManager <counterInt_type, operatingInt_type> :: found.size())
+  {
+   std :: sort(iterator.small.begin(), iterator.small.end());
+   std :: sort(iterator.large.begin(), iterator.large.end());
+   resultManager <counterInt_type, operatingInt_type> :: found = std :: move(iterator.small);
+   resultManager <counterInt_type, operatingInt_type> :: foundLarge = std :: move(iterator.large);
+   resultManager <counterInt_type, operatingInt_type> :: radicesBegin = std :: next(resultManager <counterInt_type, operatingInt_type> :: found.cbegin(), steps :: getPrimesToSkip());
+   stateManager <counterInt_type, operatingInt_type> :: counter = (foundLarge.empty() ? static_cast<counterInt_type>(found.back()) : foundLarge.back());
+   stateManager <counterInt_type, operatingInt_type> :: lastCounting = *(resultManager <counterInt_type, operatingInt_type> :: radicesBegin);
+   stateManager <counterInt_type, operatingInt_type> :: countingBlock = {};
+
+   for (auto it = std :: next(resultManager <counterInt_type, operatingInt_type> :: radicesBegin); it != resultManager <counterInt_type, operatingInt_type> :: found.cend();++it)
+   {
+    const auto value = *it;
+    if (value > (stateManager <counterInt_type, operatingInt_type> :: counter) / value) break;
+    stateManager <counterInt_type, operatingInt_type> :: countingBlock.emplace_back((stateManager <counterInt_type, operatingInt_type> :: counter) % (stateManager <counterInt_type, operatingInt_type> :: lastCounting));
+    stateManager <counterInt_type, operatingInt_type> :: lastCounting = value;
+   }
+   (stateManager <counterInt_type, operatingInt_type> :: lastCounting) = (stateManager <counterInt_type, operatingInt_type> :: counter) % (stateManager <counterInt_type, operatingInt_type> :: lastCounting);
+   resultManager <counterInt_type, operatingInt_type> :: radicesEnd = std :: next(resultManager <counterInt_type, operatingInt_type> :: radicesBegin, stateManager <counterInt_type, operatingInt_type> :: countingBlock.size());
+  }
+  return true;
+ }
+ catch (...) {}
+ return false;
+}
 
 template <class counterInt_type, class operatingInt_type> inline bool resultManager <counterInt_type, operatingInt_type> :: init(const std :: size_t& maxSize) noexcept
 {
