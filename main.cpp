@@ -15,16 +15,13 @@
 
 #include "logic.h"
 #include "resultmanager.h"
+#include "statemanager.h"
 
 using counterInt_type = std :: uint64_t;
 using operatingInt_type = std :: uint32_t;
 
-
-counterInt_type counter = 127u;
-std :: vector<operatingInt_type> countingBlock = {127u % 11u};
-operatingInt_type lastCounting = 127u % 13u;
-
 using results = resultManager <counterInt_type, operatingInt_type>;
+using state = stateManager <counterInt_type, operatingInt_type>;
 
 /*constexpr const*/ auto nextRest = steps :: template getRests <arrayerForType <std :: size_t> :: template type> :: array();
 /*constexpr const*/ auto counterStep = steps :: template getStepps <arrayerForType <std :: size_t> :: template type> :: array();
@@ -88,8 +85,12 @@ void parseArgs(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
- results :: init(maxSize, countingBlock);
- countingBlock.reserve(sqrtl(maxSize));
+ if (!(results :: init(maxSize)))
+ {
+  std :: cerr << "Failed to initialise." << std :: endl;
+  return EXIT_FAILURE;
+ }
+ //countingBlock.reserve(sqrtl(maxSize));
  unsigned long int nextStep = step;
  parseArgs(--argc, ++argv);
  std :: cout << "Done parsing arguments" << std :: endl;
@@ -102,46 +103,46 @@ int main(int argc, char* argv[])
  const std :: chrono :: time_point<std :: chrono :: high_resolution_clock> start = std :: chrono :: high_resolution_clock :: now();
  std :: chrono :: time_point<std :: chrono :: high_resolution_clock> prevExtend = start;
  std :: chrono :: time_point<std :: chrono :: high_resolution_clock> prevStep = start;
- auto prevCounter = counter;
- auto currentRest = counter % steps :: tableSize;
+ auto prevCounter = state :: counter;
+ auto currentRest = state :: counter % steps :: tableSize;
  
  while(results :: foundSize() < maxSize)
  {
-  counter += counterStep[currentRest];
+  state :: counter += counterStep[currentRest];
   lastFound = false;
   blockFound = false;
   const auto processor = processors[currentRest];
-  std :: transform(std :: execution :: par, countingBlock.cbegin(), countingBlock.cend(), results :: getRadicesBegin(), countingBlock.begin(), [&blockFound, processor](decltype(countingBlock) :: value_type counter, const auto& constant)
+  std :: transform(std :: execution :: par, state :: countingBlock.cbegin(), state :: countingBlock.cend(), results :: getRadicesBegin(), state :: countingBlock.begin(), [&blockFound, processor](decltype(state :: countingBlock) :: value_type counter, const auto& constant)
   {
    processor(constant, counter, blockFound);
    return counter;
   });
-  processor(lastConstant, lastCounting, lastFound);
+  processor(lastConstant, state :: lastCounting, lastFound);
   currentRest = nextRest[currentRest];
   if (!blockFound)
   {
    if (lastFound)
    {
-    countingBlock.push_back(lastCounting);
+    state :: countingBlock.push_back(state :: lastCounting);
     lastConstant = results :: extendBlock();
-    lastCounting = counter % lastConstant;
+    state :: lastCounting = state :: counter % lastConstant;
     const std :: chrono :: time_point<std :: chrono :: high_resolution_clock> newPrevExtend = std :: chrono :: high_resolution_clock :: now();
     const auto duration = std :: chrono :: duration_cast<std :: chrono :: milliseconds>(newPrevExtend - prevExtend);
-    std :: cout << "Extending conunting block to size " << countingBlock.size() << " after " << duration.count() << "ms" << std :: endl;
+    std :: cout << "Extending conunting block to size " << state :: countingBlock.size() << " after " << duration.count() << "ms" << std :: endl;
     prevExtend = newPrevExtend;
    }
    else
    {
-    results :: addFound(counter);
+    results :: addFound(state :: counter);
     if (results :: foundSize() == nextStep)
     {
      const std :: chrono :: time_point<std :: chrono :: high_resolution_clock> newPrevStep = std :: chrono :: high_resolution_clock :: now();
      const auto duration = std :: chrono :: duration_cast<std :: chrono :: seconds>(newPrevStep - prevStep);
      const auto primesSpeed = static_cast<const long double>( step) / duration.count();
-     const auto totalSpeed = static_cast<const long double>(counter - prevCounter) / duration.count();
-     const auto globalSpeed = static_cast<const long double>(counter) / std :: chrono :: duration_cast<std :: chrono :: seconds>(newPrevStep - start).count();
+     const auto totalSpeed = static_cast<const long double>(state :: counter - prevCounter) / duration.count();
+     const auto globalSpeed = static_cast<const long double>(state :: counter) / std :: chrono :: duration_cast<std :: chrono :: seconds>(newPrevStep - start).count();
      std :: cout << "Found " << nextStep << " of " << maxSize << "; " << primesSpeed << " primes per s; " << totalSpeed << " checks per s; global " << globalSpeed << " checks per s" << std :: endl;
-     prevCounter = counter;
+     prevCounter = state :: counter;
      prevStep = newPrevStep;
      nextStep += step;
     }
@@ -155,7 +156,7 @@ int main(int argc, char* argv[])
  std :: cout << std :: endl;
  auto duration = std :: chrono :: duration_cast<std :: chrono :: milliseconds>(stop - start);
  std :: cout << "In: " << duration.count() << "ms" << std :: endl;
- std :: cout << "Counting on set of " << countingBlock.size() << " primes" << std :: endl;
+ std :: cout << "Counting on set of " << state :: countingBlock.size() << " primes" << std :: endl;
  std :: cout << "Largest in operation is: " << lastConstant << " (0x" << std :: hex << lastConstant << ")" << std :: endl;
  if (output != &std :: cout)
  {
