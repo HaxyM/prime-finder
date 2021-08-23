@@ -50,13 +50,14 @@ template <class counterInt_type, class operatingInt_type> template <class Iterat
    }
    else
    {
-    found.push_back(static_cast<typename decltype(small) :: value_type>(a));
+    small.push_back(static_cast<typename decltype(small) :: value_type>(a));
    }
    return *this;
   };
  } iterator;
  try
  {
+  iterator.small.reserve(found.capacity());
   std :: copy(Begin, End, iterator);
   if (iterator.small.size() > resultManager <counterInt_type, operatingInt_type> :: found.size())
   {
