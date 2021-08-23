@@ -62,7 +62,7 @@ void parseArgs(int argc, char* argv[])
   return ans;
  }();
 
- for(int i = 0; i < argc;++i)
+ for(const auto end = argv + argc;argv != end;)
  {
   std :: cout << "processing: " << *argv << std :: endl;
   if (const auto found = paramMap.find(*argv++); found != paramMap.cend())
@@ -73,7 +73,6 @@ void parseArgs(int argc, char* argv[])
     std :: cout << "opening file" << std :: endl;
     output = new std :: ofstream(*argv++);
     std :: cout << "File opened: " << std :: boolalpha << output->good() << std :: endl;
-    ++i;
     break;
     case param :: input:
     input.emplace(*argv++);
@@ -96,16 +95,16 @@ int main(int argc, char* argv[])
   std :: cerr << "Failed to initialise." << std :: endl;
   return EXIT_FAILURE;
  }
- if (input && (!results :: load(std :: istream_iterator<counterInt_type>(*input), std :: istream_iterator<counterInt_type>())))
- {
-  std :: cerr << "Failed to load input data." << std :: endl;
-  return EXIT_FAILURE;
- }
  //countingBlock.reserve(sqrtl(maxSize));
  unsigned long int nextStep = step;
  parseArgs(--argc, ++argv);
  std :: cout << "Done parsing arguments" << std :: endl;
  std :: cout << "Build at: " << __DATE__ << std :: endl;
+ if (input && (!results :: load(std :: istream_iterator<counterInt_type>(*input), std :: istream_iterator<counterInt_type>())))
+ {
+  std :: cerr << "Failed to load input data." << std :: endl;
+  return EXIT_FAILURE;
+ }
 
  auto  lastConstant = *(results :: getRadicesEnd());
  std :: cout << "lastConstant is " << lastConstant << std :: endl;
